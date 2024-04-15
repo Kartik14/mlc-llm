@@ -52,29 +52,52 @@ bool JSONFFIEngine::AddRequest(std::string request_json_str, std::string request
 
   // inputs
   // TODO: Apply conv template
-  Array<Data> inputs;
+  Conversation conv_template = std::move(this->conv_template_);
+  // populate conv_template.messages from request.messages
+  std::vector<std::pair<std::string, std::optional<std::vector<std::unordered_map<std::string, std::string>>>>> messages;
   for (const auto& message : request.messages) {
-    if (message.content.has_value()) {
-      for (const auto& content : message.content.value()) {
-        if (content.find("type") == content.end()) {
-          err_ += "Content should have a type field";
-          return false;
-        }
-        std::string type = content.at("type");
-        if (type == "text") {
-          if (content.find("text") == content.end()) {
-            err_ += "Content should have a text field";
-            return false;
-          }
-          std::string text = content.at("text");
-          inputs.push_back(TextData(text));
-        } else {
-          err_ += "Content type not supported";
-          return false;
-        }
-      }
+    std::string role;
+    if (message.role == Role::user) {
+      role = "user";
+    } else if (message.role == Role::assistant) {
+      role = "assistant";
+    } else if (message.role == Role::tool) {
+      role = "tool";
+    } else {
+      role = "system";
     }
+    std::optional<std::vector<std::unordered_map<std::string, std::string>>> content = message.content;
+    messages.push_back(std::make_pair(role, content));
   }
+  // get prompt
+  std::optional<Array<Data>> inputs_obj = conv_template.as_prompt(&err_);
+  if (!inputs_obj.has_value()) {
+    this->StreamBackError(request_id);
+  }
+  Array<Data> inputs = inputs_obj.value();
+  // Array<Data> inputs;
+  // for (const auto& message : request.messages) {
+  //   if (message.content.has_value()) {
+  //     for (const auto& content : message.content.value()) {
+  //       if (content.find("type") == content.end()) {
+  //         err_ += "Content should have a type field";
+  //         return false;
+  //       }
+  //       std::string type = content.at("type");
+  //       if (type == "text") {
+  //         if (content.find("text") == content.end()) {
+  //           err_ += "Content should have a text field";
+  //           return false;
+  //         }
+  //         std::string text = content.at("text");
+  //         inputs.push_back(TextData(text));
+  //       } else {
+  //         err_ += "Content type not supported";
+  //         return false;
+  //       }
+  //     }
+  //   }
+  // }
 
   // generation_cfg
   Optional<GenerationConfig> generation_cfg = GenerationConfig::FromJSON(request_json_str, &err_);
@@ -113,20 +136,37 @@ class JSONFFIEngineImpl : public JSONFFIEngine, public ModuleNode {
     return PackedFunc([_self](TVMArgs args, TVMRetValue* rv) -> void {
       SelfPtr self = static_cast<SelfPtr>(_self.get());
 
+      // // TODO: config at args 0 and then pop
+      // LOG(INFO) << "reading conv template from args";
+      // std::optional<Conversation> conv_template = Conversation::FromJSON(args.At<std::string>(0), &self->err_);
+      // if (!conv_template.has_value()) {
+      //   LOG(FATAL) << "Invalid conversation template JSON: " << self->err_;
+      // }
+      // self->conv_template_ = conv_template.value();
+      // std::vector<TVMValue> new_args_vals{args.values + 1, args.values + args.size()};
+      // std::vector<int> new_type_codes{args.type_codes + 1, args.type_codes + args.size()};
+      // LOG(INFO) << "poping";
+      // args = TVMArgs(new_args_vals.data(), new_type_codes.data(), args.size() - 1);
+      // LOG(INFO) << "poping 1.5";
+
       std::string tokenizer_path = args.At<std::string>(1);
+      LOG(INFO) << "tokenizer_path: " << tokenizer_path;
       self->streamer_ = TextStreamer(Tokenizer::FromPath(tokenizer_path));
 
       // Callback wrapper
+      LOG(INFO) << "poping 1.51" << tokenizer_path;
       Optional<PackedFunc> request_stream_callback;
       try {
         request_stream_callback = args.At<Optional<PackedFunc>>(4);
       } catch (const dmlc::Error& e) {
         LOG(FATAL) << "ValueError: " << e.what() << kEngineCreationErrorMessage;
       }
+      LOG(INFO) << "poping 1.5765" << tokenizer_path;
 
       CHECK(request_stream_callback.defined())
           << "JSONFFIEngine requires request stream callback function, but it is not given.";
       self->request_stream_callback_ = request_stream_callback.value();
+      LOG(INFO) << "poping 1.625";
 
       auto frequest_stream_callback_wrapper = [self](TVMArgs args, TVMRetValue* ret) {
         ICHECK_EQ(args.size(), 1);
@@ -135,12 +175,15 @@ class JSONFFIEngineImpl : public JSONFFIEngine, public ModuleNode {
         self->request_stream_callback_(responses);
       };
 
+      LOG(INFO) << "poping 1.75";
       std::vector<TVMValue> values{args.values, args.values + args.size()};
       std::vector<int> type_codes{args.type_codes, args.type_codes + args.size()};
       TVMArgsSetter setter(values.data(), type_codes.data());
       request_stream_callback = PackedFunc(frequest_stream_callback_wrapper);
       setter(4, request_stream_callback);
+      LOG(INFO) << "poping 2";
       self->engine_->InitBackgroundEngine(TVMArgs(values.data(), type_codes.data(), args.size()));
+      LOG(INFO) << "poping 3";
     });
   }
   TVM_MODULE_VTABLE_END();

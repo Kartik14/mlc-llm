@@ -16,6 +16,7 @@ from mlc_llm.serve.engine_base import (
     _process_model_args,
 )
 from mlc_llm.tokenizer import Tokenizer
+from mlc_llm.protocol.conversation_protocol import Conversation, MessagePlaceholders
 
 prompts = [
     "What is the meaning of life?",
@@ -114,6 +115,23 @@ class JSONFFIEngine:
             engine_mode = EngineMode()
 
         def _background_loop():
+            conversation_config = Conversation(
+                name="llama-2",
+                system_template=f"[INST] <<SYS>>\n{MessagePlaceholders.SYSTEM.value}\n<</SYS>>\n\n",
+                system_message="You are a helpful, respectful and honest assistant.",
+                roles={"user": "[INST]", "assistant": "[/INST]", "tool": "[INST]"},
+                seps=[" "],
+                role_content_sep=" ",
+                role_empty_sep=" ",
+                stop_str=["[INST]"],
+                stop_token_ids=[2],
+                system_prefix_token_ids=[1],
+                add_role_after_system_message=False,
+            ).model_dump_json()
+
+            print(conversation_config)
+            print(tokenizer_path)
+
             self._ffi["init_background_engine"](
                 max_single_sequence_length,
                 tokenizer_path,
@@ -276,8 +294,8 @@ def test_malformed_request(engine: JSONFFIEngine):
 if __name__ == "__main__":
     # Initialize model loading info and KV cache config
     model = ModelInfo(
-        "dist/Llama-2-7b-chat-hf-q0f16-MLC",
-        model_lib_path="dist/Llama-2-7b-chat-hf-q0f16-MLC/Llama-2-7b-chat-hf-q0f16-MLC-cuda.so",
+        "dist/Llama-2-7b-chat-hf-q4f16_1-MLC",
+        model_lib_path="dist/Llama-2-7b-chat-hf-q4f16_1-MLC/Llama-2-7b-chat-hf-q4f16_1-cuda.so",
     )
     kv_cache_config = KVCacheConfig(page_size=16, max_total_sequence_length=1024)
     engine = JSONFFIEngine(model, kv_cache_config)

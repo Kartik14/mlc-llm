@@ -23,19 +23,7 @@ enum class Role { system, user, assistant, tool };
 enum class Type { text, json_object, function };
 enum class FinishReason { stop, length, tool_calls, error };
 
-std::string generate_random_string(size_t length) {
-    auto randchar = []() -> char {
-        const char charset[] =
-        "0123456789"
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz";
-        const size_t max_index = (sizeof(charset) - 1);
-        return charset[ rand() % max_index ];
-    };
-    std::string str(length, 0);
-    std::generate_n(str.begin(), length, randchar);
-    return str;
-}
+std::string generate_random_string(size_t length);
 
 class ChatFunction {
  public:
@@ -84,7 +72,7 @@ class ChatCompletionMessage {
   std::optional<std::vector<ChatToolCall>> tool_calls = std::nullopt;
   std::optional<std::string> tool_call_id = std::nullopt;
 
-  static std::optional<ChatCompletionMessage> FromJSON(const picojson::value& json,
+  static std::optional<ChatCompletionMessage> FromJSON(const picojson::object& json,
                                                        std::string* err);
   picojson::object ToJSON() const;
 };

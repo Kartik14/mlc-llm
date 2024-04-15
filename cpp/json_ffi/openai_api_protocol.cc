@@ -11,6 +11,20 @@ namespace mlc {
 namespace llm {
 namespace json_ffi {
 
+std::string generate_random_string(size_t length) {
+    auto randchar = []() -> char {
+        const char charset[] =
+        "0123456789"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz";
+        const size_t max_index = (sizeof(charset) - 1);
+        return charset[ rand() % max_index ];
+    };
+    std::string str(length, 0);
+    std::generate_n(str.begin(), length, randchar);
+    return str;
+}
+
 std::optional<ChatFunction> ChatFunction::FromJSON(const picojson::object& json_obj, std::string* err) {
   ChatFunction chatFunc;
 
@@ -22,9 +36,10 @@ std::optional<ChatFunction> ChatFunction::FromJSON(const picojson::object& json_
   
   // name
   std::string name;
-  if (json::ParseJSONField(json_obj, "name", name, err, true)) {
-    chatFunc.name = name;
+  if (!json::ParseJSONField(json_obj, "name", name, err, true)) {
+    return std::nullopt;
   }
+  chatFunc.name = name;
 
   // parameters
   picojson::object parameters_obj;
@@ -64,9 +79,10 @@ std::optional<ChatFunctionCall> ChatFunctionCall::FromJSON(const picojson::objec
   
   // name
   std::string name;
-  if (json::ParseJSONField(json_obj, "name", name, err, true)) {
-    chatFuncCall.name = name;
+  if (!json::ParseJSONField(json_obj, "name", name, err, true)) {
+    return std::nullopt;
   }
+  chatFuncCall.name = name;
 
   // arguments
   picojson::object arguments_obj;
@@ -127,14 +143,8 @@ picojson::object ChatToolCall::ToJSON() const {
   return obj;
 }
 
-std::optional<ChatCompletionMessage> ChatCompletionMessage::FromJSON(const picojson::value& json,
+std::optional<ChatCompletionMessage> ChatCompletionMessage::FromJSON(const picojson::object& json_obj,
                                                                      std::string* err) {
-  if (!json.is<picojson::object>()) {
-    *err += "Input is not a valid JSON object";
-    return std::nullopt;
-  }
-  picojson::object json_obj = json.get<picojson::object>();
-
   ChatCompletionMessage message;
 
   // content
@@ -221,7 +231,8 @@ std::optional<ChatCompletionRequest> ChatCompletionRequest::FromJSON(
   }
   std::vector<ChatCompletionMessage> messages;
   for (const auto& item : messages_arr) {
-    std::optional<ChatCompletionMessage> message = ChatCompletionMessage::FromJSON(item, err);
+    picojson::object item_obj = item.get<picojson::object>();
+    std::optional<ChatCompletionMessage> message = ChatCompletionMessage::FromJSON(item_obj, err);
     if (!message.has_value()) {
       return std::nullopt;
     }
