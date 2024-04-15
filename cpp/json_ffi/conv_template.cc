@@ -24,18 +24,6 @@ MessagePlaceholders message_placeholder_from_string(const std::string& role) {
     return enumMap.at(role);
 }
 
-Conversation::Conversation(std::optional<std::unordered_map<std::string, std::string>> role_templates) {
-    std::unordered_map<std::string, std::string> _role_templates = {
-        {"user", PLACEHOLDERS[MessagePlaceholders::USER]},
-        {"assistant", PLACEHOLDERS[MessagePlaceholders::ASSISTANT]},
-        {"tool", PLACEHOLDERS[MessagePlaceholders::TOOL]}
-    };
-    if (role_templates) {
-        _role_templates.insert(role_templates->begin(), role_templates->end());
-    }
-    this->role_templates = _role_templates;
-}
-
 std::vector<std::string> Conversation::check_message_seps(std::vector<std::string> seps) {
     if (seps.size() == 0 || seps.size() > 2) {
         throw std::invalid_argument("seps should have size 1 or 2.");
@@ -187,10 +175,11 @@ std::optional<Conversation> Conversation::FromJSON(const picojson::object& json,
             }
             role_templates[role.first] = role.second.get<std::string>();
         }
-        conv.role_templates = role_templates;    
+        for (const auto& role_temp : role_templates) {
+            conv.role_templates[role_temp.first] = role_temp.second;
+        }
     }
     
-
     picojson::array messages_arr;
     if (!json::ParseJSONField(json, "messages", messages_arr, err, true)) {
         return std::nullopt;

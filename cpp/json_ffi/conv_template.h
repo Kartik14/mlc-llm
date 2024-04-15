@@ -41,7 +41,11 @@ struct Conversation {
     std::optional<std::string> function_string;
     std::optional<bool> use_function_calling = false;
 
-    Conversation(std::optional<std::unordered_map<std::string, std::string>> role_templates = std::nullopt);
+    Conversation() : role_templates({
+        {"user", PLACEHOLDERS[MessagePlaceholders::USER]},
+        {"assistant", PLACEHOLDERS[MessagePlaceholders::ASSISTANT]},
+        {"tool", PLACEHOLDERS[MessagePlaceholders::TOOL]}
+    }) {};
 
     static std::vector<std::string> check_message_seps(std::vector<std::string> seps);
 
