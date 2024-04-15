@@ -24,6 +24,13 @@ MessagePlaceholders message_placeholder_from_string(const std::string& role) {
     return enumMap.at(role);
 }
 
+Conversation::Conversation()
+    : role_templates({
+        {"user", PLACEHOLDERS[MessagePlaceholders::USER]},
+        {"assistant", PLACEHOLDERS[MessagePlaceholders::ASSISTANT]},
+        {"tool", PLACEHOLDERS[MessagePlaceholders::TOOL]}
+    }) {}
+
 std::vector<std::string> Conversation::check_message_seps(std::vector<std::string> seps) {
     if (seps.size() == 0 || seps.size() > 2) {
         throw std::invalid_argument("seps should have size 1 or 2.");
