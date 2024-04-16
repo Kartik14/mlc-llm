@@ -136,18 +136,18 @@ class JSONFFIEngineImpl : public JSONFFIEngine, public ModuleNode {
     return PackedFunc([_self](TVMArgs args, TVMRetValue* rv) -> void {
       SelfPtr self = static_cast<SelfPtr>(_self.get());
 
-      // // TODO: config at args 0 and then pop
-      // LOG(INFO) << "reading conv template from args";
-      // std::optional<Conversation> conv_template = Conversation::FromJSON(args.At<std::string>(0), &self->err_);
-      // if (!conv_template.has_value()) {
-      //   LOG(FATAL) << "Invalid conversation template JSON: " << self->err_;
-      // }
-      // self->conv_template_ = conv_template.value();
-      // std::vector<TVMValue> new_args_vals{args.values + 1, args.values + args.size()};
-      // std::vector<int> new_type_codes{args.type_codes + 1, args.type_codes + args.size()};
-      // LOG(INFO) << "poping";
-      // args = TVMArgs(new_args_vals.data(), new_type_codes.data(), args.size() - 1);
-      // LOG(INFO) << "poping 1.5";
+      // TODO: config at args 0 and then pop
+      LOG(INFO) << "reading conv template from args";
+      std::optional<Conversation> conv_template = Conversation::FromJSON(args.At<std::string>(0), &self->err_);
+      if (!conv_template.has_value()) {
+        LOG(FATAL) << "Invalid conversation template JSON: " << self->err_;
+      }
+      self->conv_template_ = conv_template.value();
+      std::vector<TVMValue> new_args_vals{args.values + 1, args.values + args.size()};
+      std::vector<int> new_type_codes{args.type_codes + 1, args.type_codes + args.size()};
+      LOG(INFO) << "poping";
+      args = TVMArgs(new_args_vals.data(), new_type_codes.data(), args.size() - 1);
+      LOG(INFO) << "poping 1.5";
 
       std::string tokenizer_path = args.At<std::string>(1);
       LOG(INFO) << "tokenizer_path: " << tokenizer_path;

@@ -86,14 +86,13 @@ std::optional<ChatFunctionCall> ChatFunctionCall::FromJSON(const picojson::objec
 
   // arguments
   picojson::object arguments_obj;
-  if (!json::ParseJSONField(json_obj, "arguments", arguments_obj, err, false)) {
-    return std::nullopt;
+  if (json::ParseJSONField(json_obj, "arguments", arguments_obj, err, false)) {
+    std::unordered_map<std::string, std::string> arguments;
+    for (picojson::value::object::const_iterator i = arguments_obj.begin(); i != arguments_obj.end(); ++i) {
+      arguments[i->first] = i->second.to_str();
+    }
+    chatFuncCall.arguments = arguments;
   }
-  std::unordered_map<std::string, std::string> arguments;
-  for (picojson::value::object::const_iterator i = arguments_obj.begin(); i != arguments_obj.end(); ++i) {
-    arguments[i->first] = i->second.to_str();
-  }
-  chatFuncCall.arguments = arguments;
 
   return chatFuncCall;
 }
@@ -101,10 +100,12 @@ std::optional<ChatFunctionCall> ChatFunctionCall::FromJSON(const picojson::objec
 picojson::object ChatFunctionCall::ToJSON() const {
   picojson::object obj;
   picojson::object arguments_obj;
-  for (const auto& pair : this->arguments.value()) {
-    arguments_obj[pair.first] = picojson::value(pair.second);
+  if (this->arguments.has_value()) {
+    for (const auto& pair : this->arguments.value()) {
+      arguments_obj[pair.first] = picojson::value(pair.second);
+    }
+    obj["arguments"] = picojson::value(arguments_obj);
   }
-  obj["arguments"] = picojson::value(arguments_obj);
   
   obj["name"] = picojson::value(this->name);
   return obj;
@@ -193,23 +194,22 @@ std::optional<ChatCompletionMessage> ChatCompletionMessage::FromJSON(const picoj
 
   // tool calls
   picojson::array tool_calls_arr;
-  if (!json::ParseJSONField(json_obj, "tool_calls", tool_calls_arr, err, true)) {
-    return std::nullopt;
-  }
-  std::vector<ChatToolCall> tool_calls;
-  for (const auto& item : tool_calls_arr) {
-    if (!item.is<picojson::object>()) {
-      *err += "Chat Tool Call item is not an object";
-      return std::nullopt;
+  if (json::ParseJSONField(json_obj, "tool_calls", tool_calls_arr, err, false)) {
+    std::vector<ChatToolCall> tool_calls;
+    for (const auto& item : tool_calls_arr) {
+      if (!item.is<picojson::object>()) {
+        *err += "Chat Tool Call item is not an object";
+        return std::nullopt;
+      }
+      picojson::object item_obj = item.get<picojson::object>();
+      std::optional<ChatToolCall> tool_call = ChatToolCall::FromJSON(item_obj, err);
+      if (!tool_call.has_value()){
+        return std::nullopt;
+      };
+      tool_calls.push_back(tool_call.value());
     }
-    picojson::object item_obj = item.get<picojson::object>();
-    std::optional<ChatToolCall> tool_call = ChatToolCall::FromJSON(item_obj, err);
-    if (!tool_call.has_value()){
-      return std::nullopt;
-    };
-    tool_calls.push_back(tool_call.value());
+    message.tool_calls = tool_calls; 
   }
-  message.tool_calls = tool_calls;
 
   // tool call id
   std::string tool_call_id;

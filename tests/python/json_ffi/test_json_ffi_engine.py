@@ -133,6 +133,7 @@ class JSONFFIEngine:
             print(tokenizer_path)
 
             self._ffi["init_background_engine"](
+                conversation_config,
                 max_single_sequence_length,
                 tokenizer_path,
                 kv_cache_config.asjson(),
