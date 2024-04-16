@@ -69,10 +69,12 @@ bool JSONFFIEngine::AddRequest(std::string request_json_str, std::string request
     std::optional<std::vector<std::unordered_map<std::string, std::string>>> content = message.content;
     messages.push_back(std::make_pair(role, content));
   }
+  // TODO: change accordingly
+  conv_template.messages.insert(conv_template.messages.end(), messages.begin(), messages.end());
   // get prompt
   std::optional<Array<Data>> inputs_obj = conv_template.as_prompt(&err_);
   if (!inputs_obj.has_value()) {
-    this->StreamBackError(request_id);
+    return false;
   }
   Array<Data> inputs = inputs_obj.value();
   // Array<Data> inputs;
