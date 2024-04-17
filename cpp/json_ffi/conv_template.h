@@ -29,7 +29,7 @@ struct Conversation {
     std::string system_template;
     std::string system_message;
     std::optional<std::vector<int>> system_prefix_token_ids;
-    bool add_role_after_system_message;
+    bool add_role_after_system_message = true;
     std::unordered_map<std::string, std::string> roles;
     std::unordered_map<std::string, std::string> role_templates;
     std::vector<std::pair<std::string, std::optional<std::vector<std::unordered_map<std::string, std::string>>>>> messages;

@@ -256,7 +256,7 @@ class JSONFFIEngine:
 
 def test_chat_completion(engine: JSONFFIEngine):
     num_requests = 2
-    max_tokens = 64
+    max_tokens = 128
     n = 1
     output_texts: List[List[str]] = [["" for _ in range(n)] for _ in range(num_requests)]
 

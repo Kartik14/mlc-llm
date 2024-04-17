@@ -62,7 +62,6 @@ std::optional<std::vector<Data>> Conversation::as_prompt(std::string* err) {
     for (int i = 0; i < messages.size(); i++) {
         std::string role = messages[i].first;
         std::optional<std::vector<std::unordered_map<std::string, std::string>>> content = messages[i].second;
-
         if (roles.find(role) == roles.end()) {
             *err += "\nRole " + role + " is not supported. ";  
             return std::nullopt;
@@ -174,16 +173,12 @@ std::optional<Conversation> Conversation::FromJSON(const picojson::object& json,
 
     picojson::object role_templates_object;
     if (json::ParseJSONField(json, "role_templates", role_templates_object, err, false)) {
-        std::unordered_map<std::string, std::string> role_templates;
         for (const auto& role : role_templates_object) {
             if (!role.second.is<std::string>()) {
                 *err += "role_templates should be a map of string to string.";
                 return std::nullopt;
             }
-            role_templates[role.first] = role.second.get<std::string>();
-        }
-        for (const auto& role_temp : role_templates) {
-            conv.role_templates[role_temp.first] = role_temp.second;
+            conv.role_templates[role.first] = role.second.get<std::string>();
         }
     }
     
