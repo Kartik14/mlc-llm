@@ -357,10 +357,10 @@ picojson::object ChatCompletionMessage::ToJSON() const {
 }
 
 
-void ChatCompletionRequest::check_function_calling(Conversation& conv_template, std::string* err) {
+bool ChatCompletionRequest::check_function_calling(Conversation& conv_template, std::string* err) {
   if (!tools.has_value() || (tool_choice.has_value() && tool_choice.value() == "none")) {
       conv_template.use_function_calling = false;
-      return;
+      return true;
   }
   std::vector<ChatTool> tools_ = tools.value();
   std::string tool_choice_ = tool_choice.value();
@@ -371,13 +371,13 @@ void ChatCompletionRequest::check_function_calling(Conversation& conv_template, 
         conv_template.use_function_calling = true;
         picojson::value function_str(tool.function.ToJSON());
         conv_template.function_string = function_str.serialize();
-        return;
+        return true;
     }
   }
 
   if (tool_choice_ != "auto") {
     *err += "Invalid tool_choice value: " + tool_choice_;
-    return;
+    return false;
   }
 
   picojson::array function_list;
@@ -388,6 +388,7 @@ void ChatCompletionRequest::check_function_calling(Conversation& conv_template, 
   conv_template.use_function_calling = true;
   picojson::value function_list_json(function_list);
   conv_template.function_string = function_list_json.serialize();
+  return true;
 };
 
 

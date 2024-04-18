@@ -150,9 +150,29 @@ class JSONFFIEngine:
                 system_prefix_token_ids=[1],
                 add_role_after_system_message=False,
             ).model_dump_json()
-
-            print(conversation_config)
-            print(tokenizer_path)
+            
+            # conversation_config = Conversation(
+            #     name="gorilla",
+            #     system_template=f"{MessagePlaceholders.SYSTEM.value}",
+            #     system_message=(
+            #         "A chat between a curious user and an artificial intelligence assistant. "
+            #         "The assistant provides helpful, detailed, and "
+            #         "polite responses to the user's inquiries."
+            #     ),
+            #     role_templates={
+            #         "user": (
+            #             f"<<question>> {MessagePlaceholders.USER.value} <<function>> "
+            #             f"{MessagePlaceholders.FUNCTION.value}"
+            #         ),
+            #     },
+            #     roles={"user": "USER", "assistant": "ASSISTANT", "tool": "USER"},
+            #     seps=["\n", "</s>"],
+            #     role_content_sep=": ",
+            #     role_empty_sep=":",
+            #     stop_str=["</s>"],
+            #     stop_token_ids=[2],
+            #     system_prefix_token_ids=[1],
+            # ).model_dump_json()
 
             self._ffi["init_background_engine"](
                 conversation_config,

@@ -99,7 +99,7 @@ std::optional<std::vector<Data>> Conversation::as_prompt(std::string* err) {
                 if (pos != std::string::npos) {
                     role_text.replace(pos, placeholder.length(), item["text"]);
                 }
-                if (use_function_calling) {
+                if (use_function_calling.has_value() && use_function_calling.value()){
                     // replace placeholder[FUNCTION] with function_string
                     // this assumes function calling is used for a single request scenario only
                     if (!function_string.has_value()) {

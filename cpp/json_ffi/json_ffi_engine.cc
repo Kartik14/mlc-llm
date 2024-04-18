@@ -51,9 +51,7 @@ bool JSONFFIEngine::AddRequest(std::string request_json_str, std::string request
   // TODO: Check if request_id is present already
 
   // inputs
-  // TODO: Apply conv template
   Conversation conv_template = this->conv_template_;
-  // populate conv_template.messages from request.messages
   std::vector<std::pair<std::string, std::optional<std::vector<std::unordered_map<std::string, std::string>>>>> messages;
   for (const auto& message : request.messages) {
     std::string role;
@@ -73,8 +71,8 @@ bool JSONFFIEngine::AddRequest(std::string request_json_str, std::string request
   conv_template.messages = messages;
 
   // check function calling
-  request.check_function_calling(conv_template, &err_);
-  if (!err_.empty()){
+  bool success_check = request.check_function_calling(conv_template, &err_);
+  if (!success_check){
     return false;
   }
 
@@ -84,29 +82,6 @@ bool JSONFFIEngine::AddRequest(std::string request_json_str, std::string request
     return false;
   }
   Array<Data> inputs = inputs_obj.value();
-  // Array<Data> inputs;
-  // for (const auto& message : request.messages) {
-  //   if (message.content.has_value()) {
-  //     for (const auto& content : message.content.value()) {
-  //       if (content.find("type") == content.end()) {
-  //         err_ += "Content should have a type field";
-  //         return false;
-  //       }
-  //       std::string type = content.at("type");
-  //       if (type == "text") {
-  //         if (content.find("text") == content.end()) {
-  //           err_ += "Content should have a text field";
-  //           return false;
-  //         }
-  //         std::string text = content.at("text");
-  //         inputs.push_back(TextData(text));
-  //       } else {
-  //         err_ += "Content type not supported";
-  //         return false;
-  //       }
-  //     }
-  //   }
-  // }
 
   // generation_cfg
   Optional<GenerationConfig> generation_cfg = GenerationConfig::FromJSON(request_json_str, &err_);
