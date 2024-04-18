@@ -71,6 +71,13 @@ bool JSONFFIEngine::AddRequest(std::string request_json_str, std::string request
   }
   messages.push_back({"assistant", std::nullopt});
   conv_template.messages = messages;
+
+  // check function calling
+  request.check_function_calling(conv_template, &err_);
+  if (!err_.empty()){
+    return false;
+  }
+
   // get prompt
   std::optional<Array<Data>> inputs_obj = conv_template.as_prompt(&err_);
   if (!inputs_obj.has_value()) {

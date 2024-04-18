@@ -19,6 +19,7 @@ from mlc_llm.tokenizer import Tokenizer
 from mlc_llm.protocol.conversation_protocol import Conversation, MessagePlaceholders
 
 prompts = [
+    "What is the temperature in Pittsburgh, PA?",
     "What is the meaning of life?",
     "Introduce the history of Pittsburgh to me. Please elaborate in detail.",
     "Write a three-day Seattle travel plan. Please elaborate in detail.",
@@ -29,6 +30,27 @@ prompts = [
     "Where is milk tea originated from? Please elaborate in detail.",
     "Where is the southernmost place in United States? Please elaborate in detail.",
     "Do you know AlphaGo? What capabilities does it have, and what achievements has it got? Please elaborate in detail.",
+]
+
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_current_weather",
+            "description": "Get the current weather in a given location",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The city and state, e.g. San Francisco, CA",
+                    },
+                    "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                },
+                "required": ["location"],
+            },
+        },
+    }
 ]
 
 
@@ -255,7 +277,7 @@ class JSONFFIEngine:
 
 
 def test_chat_completion(engine: JSONFFIEngine):
-    num_requests = 2
+    num_requests = 1
     max_tokens = 128
     n = 1
     output_texts: List[List[str]] = [["" for _ in range(n)] for _ in range(num_requests)]

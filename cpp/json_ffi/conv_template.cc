@@ -2,6 +2,7 @@
 #include "../metadata/json_parser.h"
 
 using namespace mlc::llm;
+using namespace mlc::llm::json_ffi;
 
 
 std::map<MessagePlaceholders, std::string> PLACEHOLDERS = {
@@ -98,6 +99,18 @@ std::optional<std::vector<Data>> Conversation::as_prompt(std::string* err) {
                 if (pos != std::string::npos) {
                     role_text.replace(pos, placeholder.length(), item["text"]);
                 }
+                if (use_function_calling) {
+                    // replace placeholder[FUNCTION] with function_string
+                    // this assumes function calling is used for a single request scenario only
+                    if (!function_string.has_value()) {
+                        *err += "Function string is required for function calling";
+                        return std::nullopt;
+                    }
+                    pos = role_text.find(PLACEHOLDERS[MessagePlaceholders::FUNCTION]);
+                    if (pos != std::string::npos) {
+                        role_text.replace(pos, PLACEHOLDERS[MessagePlaceholders::FUNCTION].length(), function_string.value());
+                    }
+                }
                 message += role_text;
             } else {
                 *err += "Unsupported content type: " + item["type"];
@@ -106,6 +119,7 @@ std::optional<std::vector<Data>> Conversation::as_prompt(std::string* err) {
         }
 
         message += separator;
+        
         message_list.push_back(TextData(message));
     }
 

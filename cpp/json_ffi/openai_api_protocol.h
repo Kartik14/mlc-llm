@@ -14,6 +14,7 @@
 #include <random>
 
 #include "picojson.h"
+#include "conv_template.h"
 
 namespace mlc {
 namespace llm {
@@ -33,6 +34,7 @@ class ChatFunction {
       parameters;  // Assuming parameters are string key-value pairs
 
   static std::optional<ChatFunction> FromJSON(const picojson::object& json, std::string* err);
+  picojson::object ToJSON() const;
 };
 
 class ChatTool {
@@ -41,6 +43,7 @@ class ChatTool {
   ChatFunction function;
 
   static std::optional<ChatTool> FromJSON(const picojson::object& json, std::string* err);
+  picojson::object ToJSON() const;
 };
 
 class ChatFunctionCall {
@@ -118,6 +121,7 @@ class ChatCompletionRequest {
   static std::optional<ChatCompletionRequest> FromJSON(const std::string& json_str,
                                                        std::string* err);
 
+  void check_function_calling(Conversation& conv_template, std::string* err);                                                     
   // TODO: check_penalty_range, check_logit_bias, check_logprobs
 };
 

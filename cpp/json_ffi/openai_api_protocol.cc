@@ -56,6 +56,21 @@ std::optional<ChatFunction> ChatFunction::FromJSON(const picojson::object& json_
 }
 
 
+picojson::object ChatFunction::ToJSON() const {
+  picojson::object obj;
+  if (this->description.has_value()) {
+    obj["description"] = picojson::value(this->description.value());
+  }
+  obj["name"] = picojson::value(this->name);
+  picojson::object parameters_obj;
+  for (const auto& pair : this->parameters) {
+    parameters_obj[pair.first] = picojson::value(pair.second);
+  }
+  obj["parameters"] = picojson::value(parameters_obj);
+  return obj;
+}
+
+
 std::optional<ChatTool> ChatTool::FromJSON(const picojson::object& json_obj, std::string* err) {
   ChatTool chatTool;
 
@@ -72,6 +87,13 @@ std::optional<ChatTool> ChatTool::FromJSON(const picojson::object& json_obj, std
   chatTool.function = function.value();
 
   return chatTool;
+}
+
+picojson::object ChatTool::ToJSON() const {
+  picojson::object obj;
+  obj["type"] = picojson::value("function");
+  obj["function"] = picojson::value(this->function.ToJSON());
+  return obj;
 }
 
 std::optional<ChatFunctionCall> ChatFunctionCall::FromJSON(const picojson::object& json_obj, std::string* err) {
@@ -259,6 +281,31 @@ std::optional<ChatCompletionRequest> ChatCompletionRequest::FromJSON(
     request.presence_penalty = presence_penalty;
   }
 
+  // tool_choice
+  std::string tool_choice = "auto";
+  if (json::ParseJSONField(json_obj, "tool_choice", tool_choice, err, false)) {
+    request.tool_choice = tool_choice;
+  }
+
+  // tools
+  picojson::array tools_arr;
+  if (json::ParseJSONField(json_obj, "tools", tools_arr, err, false)) {
+    std::vector<ChatTool> tools;
+    for (const auto& item : tools_arr) {
+      if (!item.is<picojson::object>()) {
+        *err += "Chat Tool item is not an object";
+        return std::nullopt;
+      }
+      picojson::object item_obj = item.get<picojson::object>();
+      std::optional<ChatTool> tool = ChatTool::FromJSON(item_obj, err);
+      if (!tool.has_value()){
+        return std::nullopt;
+      };
+      tools.push_back(tool.value());
+    }
+    request.tools = tools;
+  }
+
   // TODO: Other parameters
 
   return request;
@@ -308,6 +355,41 @@ picojson::object ChatCompletionMessage::ToJSON() const {
   }
   return obj;
 }
+
+
+void ChatCompletionRequest::check_function_calling(Conversation& conv_template, std::string* err) {
+  if (!tools.has_value() || (tool_choice.has_value() && tool_choice.value() == "none")) {
+      conv_template.use_function_calling = false;
+      return;
+  }
+  std::vector<ChatTool> tools_ = tools.value();
+  std::string tool_choice_ = tool_choice.value();
+
+  // TODO: support with tool choice as dict
+  for (const auto& tool : tools_) {
+    if (tool.function.name == tool_choice_) {
+        conv_template.use_function_calling = true;
+        picojson::value function_str(tool.function.ToJSON());
+        conv_template.function_string = function_str.serialize();
+        return;
+    }
+  }
+
+  if (tool_choice_ != "auto") {
+    *err += "Invalid tool_choice value: " + tool_choice_;
+    return;
+  }
+
+  picojson::array function_list;
+  for (const auto& tool : tools_) {
+    function_list.push_back(picojson::value(tool.function.ToJSON()));
+  }
+
+  conv_template.use_function_calling = true;
+  picojson::value function_list_json(function_list);
+  conv_template.function_string = function_list_json.serialize();
+};
+
 
 picojson::object ChatCompletionResponseChoice::ToJSON() const {
   picojson::object obj;

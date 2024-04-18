@@ -24,11 +24,14 @@ enum class MessagePlaceholders {
 
 MessagePlaceholders message_placeholder_from_string(const std::string& role);
 
-struct Conversation {
-    std::optional<std::string> name;
+namespace mlc{
+namespace llm{
+namespace json_ffi{
+            struct Conversation {
+    std::optional<std::string> name = std::nullopt;
     std::string system_template;
     std::string system_message;
-    std::optional<std::vector<int>> system_prefix_token_ids;
+    std::optional<std::vector<int>> system_prefix_token_ids = std::nullopt;
     bool add_role_after_system_message = true;
     std::unordered_map<std::string, std::string> roles;
     std::unordered_map<std::string, std::string> role_templates;
@@ -38,7 +41,7 @@ struct Conversation {
     std::string role_empty_sep;
     std::vector<std::string> stop_str;
     std::vector<int> stop_token_ids;
-    std::optional<std::string> function_string;
+    std::optional<std::string> function_string = std::nullopt;
     std::optional<bool> use_function_calling = false;
 
     Conversation();
@@ -50,5 +53,9 @@ struct Conversation {
     static std::optional<Conversation> FromJSON(const picojson::object& json, std::string* err);
     static std::optional<Conversation> FromJSON(const std::string& json_str, std::string* err);
 };
+
+}
+}
+}
 
 #endif /* MLC_LLM_JSON_FFI_OPENAI_API_CONV_TEMPLATE_H */
