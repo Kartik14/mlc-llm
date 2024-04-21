@@ -19,16 +19,9 @@ from mlc_llm.tokenizer import Tokenizer
 from mlc_llm.protocol.conversation_protocol import Conversation, MessagePlaceholders
 
 prompts = [
-    "What is the meaning of life?",
-    "Introduce the history of Pittsburgh to me. Please elaborate in detail.",
-    "Write a three-day Seattle travel plan. Please elaborate in detail.",
-    "What is Alaska famous of? Please elaborate in detail.",
-    "What is the difference between Lambda calculus and Turing machine? Please elaborate in detail.",
-    "What are the necessary components to assemble a desktop computer? Please elaborate in detail.",
-    "Why is Vitamin D important to human beings? Please elaborate in detail.",
-    "Where is milk tea originated from? Please elaborate in detail.",
-    "Where is the southernmost place in United States? Please elaborate in detail.",
-    "Do you know AlphaGo? What capabilities does it have, and what achievements has it got? Please elaborate in detail.",
+    "What is the temperature in Pittsburgh, PA?",
+    "What is the temperature in Tokyo, JP?",
+    "What is the temperature in Pittsburgh, PA and Tokyo, JP?",
 ]
 
 tools = [
@@ -138,7 +131,6 @@ class JSONFFIEngine:
 
         def _background_loop():
             conversation_config = engine_conv_config_str
-
             self._ffi["init_background_engine"](
                 conversation_config,
                 max_single_sequence_length,
@@ -262,8 +254,8 @@ class JSONFFIEngine:
 
 
 def test_chat_completion(engine: JSONFFIEngine):
-    num_requests = 4
-    max_tokens = 64
+    num_requests = 3
+    max_tokens = 20
     n = 1
     output_texts: List[List[str]] = [["" for _ in range(n)] for _ in range(num_requests)]
 
@@ -275,6 +267,7 @@ def test_chat_completion(engine: JSONFFIEngine):
             max_tokens=max_tokens,
             n=n,
             request_id=str(rid),
+            temperature=0.0,
         ):
             for choice in response.choices:
                 assert choice.delta.role == "assistant"
@@ -302,22 +295,31 @@ def test_malformed_request(engine: JSONFFIEngine):
 if __name__ == "__main__":
     # Initialize model loading info and KV cache config
     model = ModelInfo(
-        "dist/Llama-2-7b-chat-hf-q4f16_1-MLC",
-        model_lib_path="dist/Llama-2-7b-chat-hf-q4f16_1-MLC/Llama-2-7b-chat-hf-q4f16_1-cuda.so",
+        "dist/gorilla-openfunctions-v1-q4f16_1-MLC",
+        model_lib_path="dist/gorilla-openfunctions-v1-q4f16_1-MLC/gorilla-openfunctions-v1-q4f16_1-cuda.so",
     )
     kv_cache_config = KVCacheConfig(page_size=16, max_total_sequence_length=1024)
     engine_conv_config_str = Conversation(
-        name="llama-2",
-        system_template=f"[INST] <<SYS>>\n{MessagePlaceholders.SYSTEM.value}\n<</SYS>>\n\n",
-        system_message="You are a helpful, respectful and honest assistant.",
-        roles={"user": "[INST]", "assistant": "[/INST]", "tool": "[INST]"},
-        seps=[" "],
-        role_content_sep=" ",
-        role_empty_sep=" ",
-        stop_str=["[INST]"],
+        name="gorilla",
+        system_template=f"{MessagePlaceholders.SYSTEM.value}",
+        system_message=(
+            "A chat between a curious user and an artificial intelligence assistant. "
+            "The assistant provides helpful, detailed, and "
+            "polite responses to the user's inquiries."
+        ),
+        role_templates={
+            "user": (
+                f"<<question>> {MessagePlaceholders.USER.value} <<function>> "
+                f"{MessagePlaceholders.FUNCTION.value}"
+            ),
+        },
+        roles={"user": "USER", "assistant": "ASSISTANT", "tool": "USER"},
+        seps=["\n", "</s>"],
+        role_content_sep=": ",
+        role_empty_sep=":",
+        stop_str=["</s>"],
         stop_token_ids=[2],
         system_prefix_token_ids=[1],
-        add_role_after_system_message=False,
     ).model_dump_json()
     engine = JSONFFIEngine(model, kv_cache_config, engine_conv_config_str)
 
