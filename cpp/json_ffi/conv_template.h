@@ -27,7 +27,7 @@ MessagePlaceholders message_placeholder_from_string(const std::string& role);
 namespace mlc{
 namespace llm{
 namespace json_ffi{
-            struct Conversation {
+struct Conversation {
     std::optional<std::string> name = std::nullopt;
     std::string system_template;
     std::string system_message;

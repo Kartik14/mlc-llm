@@ -11,7 +11,7 @@ namespace mlc {
 namespace llm {
 namespace json_ffi {
 
-std::string generate_random_string(size_t length) {
+std::string generate_uuid_string(size_t length) {
     auto randchar = []() -> char {
         const char charset[] =
         "0123456789"
@@ -283,6 +283,7 @@ std::optional<ChatCompletionRequest> ChatCompletionRequest::FromJSON(
 
   // tool_choice
   std::string tool_choice = "auto";
+  request.tool_choice = tool_choice;
   if (json::ParseJSONField(json_obj, "tool_choice", tool_choice, err, false)) {
     request.tool_choice = tool_choice;
   }

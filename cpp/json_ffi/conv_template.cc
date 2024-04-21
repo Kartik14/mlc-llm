@@ -46,7 +46,6 @@ std::optional<std::vector<Data>> Conversation::as_prompt(std::string* err) {
     if (pos != std::string::npos) {
         system_msg.replace(pos, PLACEHOLDERS[MessagePlaceholders::SYSTEM].length(), this->system_message);
     }
-    // replace(system_msg.begin(), system_msg.end(), PLACEHOLDERS[MessagePlaceholders::SYSTEM], this->system_message);
 
     // Get the message strings
     std::vector<Data> message_list;
@@ -119,7 +118,6 @@ std::optional<std::vector<Data>> Conversation::as_prompt(std::string* err) {
         }
 
         message += separator;
-        
         message_list.push_back(TextData(message));
     }
 

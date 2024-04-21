@@ -24,7 +24,7 @@ enum class Role { system, user, assistant, tool };
 enum class Type { text, json_object, function };
 enum class FinishReason { stop, length, tool_calls, error };
 
-std::string generate_random_string(size_t length);
+std::string generate_uuid_string(size_t length);
 
 class ChatFunction {
  public:
@@ -58,7 +58,7 @@ class ChatFunctionCall {
 
 class ChatToolCall {
  public:
-  std::string id = "call_" + generate_random_string(8); 
+  std::string id = "call_" + generate_uuid_string(8); 
   Type type = Type::function;
   ChatFunctionCall function;
 
