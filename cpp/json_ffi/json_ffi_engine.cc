@@ -64,8 +64,7 @@ bool JSONFFIEngine::AddRequest(std::string request_json_str, std::string request
     } else {
       role = "system";
     }
-    std::optional<std::vector<std::unordered_map<std::string, std::string>>> content = message.content;
-    messages.push_back(std::make_pair(role, content));
+    messages.push_back(std::make_pair(role, message.content));
   }
   messages.push_back({"assistant", std::nullopt});
   conv_template.messages = messages;
@@ -84,7 +83,7 @@ bool JSONFFIEngine::AddRequest(std::string request_json_str, std::string request
   Array<Data> inputs = inputs_obj.value();
 
   // generation_cfg
-  Optional<GenerationConfig> generation_cfg = GenerationConfig::FromJSON(request_json_str, &err_);
+  Optional<GenerationConfig> generation_cfg = GenerationConfig::FromJSON(request_json_str, &err_, conv_template);
   if (!generation_cfg.defined()) {
     return false;
   }
