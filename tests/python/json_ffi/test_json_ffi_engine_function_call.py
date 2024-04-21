@@ -267,7 +267,7 @@ def test_chat_completion(engine: JSONFFIEngine):
             max_tokens=max_tokens,
             n=n,
             request_id=str(rid),
-            temperature=0.0,
+            tools=tools,
         ):
             for choice in response.choices:
                 assert choice.delta.role == "assistant"
