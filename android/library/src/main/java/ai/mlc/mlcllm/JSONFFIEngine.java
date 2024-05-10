@@ -36,18 +36,15 @@ public class JSONFFIEngine {
         exitBackgroundLoopFunc = jsonFFIEngine.getFunction("exit_background_loop");
     }
 
-    public void initBackgroundEngine() {
+    public void initBackgroundEngine(KotlinFunction callback) {
         Device device = Device.opencl();
 
         requestStreamCallback = Function.convertFunc(new Function.Callback() {
             @Override
             public Object invoke(TVMValue... args) {
-                // final String chatCompletionStreamResponsesJSONStr = args[0].asString();
-                // callback.invoke(chatCompletionStreamResponsesJSONStr);
-                // return true;
-                String input = args[0].asString();
-                Log.i("JSONFFIEngine", "requestStreamCallback " + input);
-                return "hello";
+                final String chatCompletionStreamResponsesJSONStr = args[0].asString();
+                callback.invoke(chatCompletionStreamResponsesJSONStr);
+                return 1;
             }
         });
 
